@@ -18,10 +18,18 @@ static CanTxMsgTypeDef myTxMessage;
 static CanRxMsgTypeDef myRxMessage;
 static CAN_FilterConfTypeDef myFilter;
 
-//envoie un message CAN
-static bool bCAN_Send_u64(uint32_t __MSG_ID, uint8_t __MSG_LENGTH, uint8_t * __Data, uint32_t __Timeout)
+// construit la data pour le status byte
+//TODO à adapter pour vos arguments spécifiques (Arg4 à 7, si besoin. CF CAN BUS FRAME DESCRIPTOR document)
+void vCAN_Build_Status_Msg(uint8_t * __Data, bool bSubsys_halted, bool bInitialising, bool bSubsysERR, bool bCAN_ERR, bool bArg4, bool bArg5, bool bArg6, bool bArg7)
 {
-	if(__MSG_LENGTH > 8)
+	*__Data = (bSubsys_halted || bInitialising << 1 || bSubsysERR << 2 || bCAN_ERR << 3 || bArg4 << 4 || bArg5 << 5 || bArg6 << 6 || bArg7 << 7);
+}
+
+
+//envoie un message CAN
+static bool bCAN_Send_u64(uint32_t __MSG_ID, uint8_t __MSG_LENGTH, uint8_t * __u8_Data, uint32_t __Timeout)
+{
+	if(__MSG_LENGTH > 8) // Trame CAN limitee a 8 octets
 	{
 		return 1 ;
 	}
@@ -34,7 +42,7 @@ static bool bCAN_Send_u64(uint32_t __MSG_ID, uint8_t __MSG_LENGTH, uint8_t * __D
 	
 	for(int i, i++, i<__MSG_LENGTH)
 	{
-		myTxMessage.Data[i] = (uint8_t)(__Data[i]);
+		myTxMessage.Data[i] = __u8_Data[i];
 	}
 	myTxMessage.IDE = CAN_ID_EXT;
 	myTxMessage.RTR = CAN_RTR_DATA;
@@ -60,6 +68,7 @@ void vCAN_SetFilter(uint16_t __u16_CAN_ID, uint8_t __u8_FilterNum)
 }
 
 // Configure les masques de réception CAN et arme la première réception de message CAN; 
+//TODO à adapter pour les messages que vous devez ecouter
 void vCAN_StartListening(void)
 {
 	// Configuration des filtres
@@ -71,6 +80,7 @@ void vCAN_StartListening(void)
 }
 
 // Envoie une donnée. cette fonction simplifie l'envoi d'un message.On peut envoyer plusieurs messages avec cette même fonction.
+//TODO à adapter pour vos messages
 void vCAN_Send<myData>(uint32_t <__myData>)
 {
 	vCAN_Send_u64(<MY_CAN_ID>, <MY_CAN_MSG_LENGTH>, <__myData>, 1000);
@@ -78,6 +88,7 @@ void vCAN_Send<myData>(uint32_t <__myData>)
 
 // Fonction appelée sur interruption de réception de message CAN.
 // Appelle les fonctions liées aux messages reçus. (parsers)
+//TODO à adapter pour vos messages
 void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* hcan)
 {
 	uint16_t __u16_return;
